@@ -29,3 +29,12 @@ const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`✅ Auth Service running on port ${PORT}`);
 });
+
+//로그인 유지
+const session = require('express-session');
+
+app.use(session({
+  secret: 'secret-key',
+  resave: false,
+  saveUninitialized: false,
+}));
