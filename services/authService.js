@@ -1,6 +1,7 @@
 const redisClient = require('../configs/redis');
 const { generateRandomNumber, sendEmail } = require('../lib/email.helper');
-const { User, Attendance } = require('../models');
+//const { User, Attendance } = require('../models');
+const User = require('../models/User');
 const bcrypt = require('bcrypt');
 
 exports.showVerifyPage = (req, res) => {
@@ -119,7 +120,7 @@ exports.loginProcess = async (req, res) => {
         email: user.email,
       };
 
-      const nowKST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+      /*const nowKST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
       const today = nowKST.toISOString().slice(0, 10); 
 
       const alreadyExists = await Attendance.findOne({
@@ -127,7 +128,7 @@ exports.loginProcess = async (req, res) => {
       });
       if (!alreadyExists) {
         await Attendance.create({ user_id: user.user_id, date: today });
-      }
+      }*/
 
       return res.redirect('/home');
     } else {
