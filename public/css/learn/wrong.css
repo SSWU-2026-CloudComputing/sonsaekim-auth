@@ -1,0 +1,91 @@
+@font-face {
+    font-family: 'NanumSquareRound';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/NanumSquareRound.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+/*박스 위쪽 노란색 네모랑 문제 전환 버튼*/
+.wrong-tab-container {
+    position: relative;
+    background-color: #FFF091; 
+    height: 35px;
+    width: 988px;
+    border-radius: 20px 20px 0 0;
+    z-index: 100;
+}
+
+.wrong-label {
+    position: absolute;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #FFF091;
+    padding: 8px 30px;
+    border-radius: 20px 20px 0 0;
+    font-weight: bold;
+}
+
+.quiz-btn {
+    cursor: default;
+}
+
+.learn-box {
+    border-radius: 0 0  20px 20px;
+}
+.nav-buttons {
+    border: none;
+    background: none;
+    padding: 0;
+    position: absolute;
+    bottom : 0;
+    right: 0;
+    margin: 10px;
+
+}
+
+.nav-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.nav-btn img {
+    width: 20px;
+    height: auto;
+}
+.img-box{
+     width: 336px;
+     height: 336px;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     border: 1px solid black;
+}
+
+.bookmark-image{
+    width: 200px;
+}
+.bookmark-content{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 600px;
+
+}
+.bookmark-content .bookmark-description{
+    font-size: 95px;
+    width: 180px;
+     display: flex;
+
+}
+.wrong-tab-container .back{
+    display: flex;
+    height: 35px;
+    justify-content: baseline;
+    align-items: center;
+    margin-left: 10px;
+}
+.wrong-label .back img{
+    height: 25px;
+}
