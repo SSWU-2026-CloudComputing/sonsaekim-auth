@@ -129,10 +129,23 @@ exports.loginProcess = async (req, res) => {
       if (!alreadyExists) {
         await Attendance.create({ user_id: user.user_id, date: today });
       }*/
+//디버깅 로그 추가
+     console.log("세션 저장 직전:", req.session);
 
-      return res.redirect('/home');
+      req.session.save((err) => {
+        if (err) {
+          console.error("세션 저장 에러:", err);
+          return res.status(500).send("세션 저장 실패");
+        }
+
+        console.log("세션 저장 완료:", req.session);
+
+        return res.redirect('/home');
+      });
+
     } else {
-      return res.render('auth/login', { email, error: '비밀번호가 올바르지 않습니다.' });
+      return res.render('auth/login', { 
+	      email, error: '비밀번호가 올바르지 않습니다.' });
     }
   } catch (err) {
     console.error(err);
