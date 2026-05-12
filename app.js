@@ -6,6 +6,7 @@ const session = require('express-session');
 const { RedisStore } = require('connect-redis');
 const redisClient = require('./configs/redis');
 const { sequelize } = require('./models');
+const authMiddleware = require('./middlewares/authMiddleware');
 
 const startServer = async () => {
   try {
@@ -69,10 +70,6 @@ app.use('/auth', authRouter);
 //app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/home', (req, res) => {
-  if (!req.session.user) {
-    return res.redirect('/auth/login');
-  }
-
+app.get('/home', authMiddleware, (req, res) => {
   res.send(`로그인 성공! ${req.session.user.name}`);
 });
