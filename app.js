@@ -72,14 +72,50 @@ app.use('/auth', authRouter);
 //app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/home', authMiddleware, (req, res) => {
+/*app.get('/home', authMiddleware, (req, res) => {
   res.render('auth/home', {
     user: req.session.user
   });
+});
+app.get('/home', authMiddleware, (req, res) => {
+  res.render('mypage/mypage', {
+    name: req.session.user.name,
+    email: req.session.user.email,
+
+    // (분리 전까지 필요함)임시 데이터
+    vcBookmarks: [],
+    wordBookmarks: [],
+    level: 1,
+    daysToNextLevel: 7,
+    attendanceDates: [],
+    totalDays: 0,
+    continuousDays: 0,
+  });
+});*/
+
+app.get('/home', (req, res) => {
+  res.render('auth/home');
 });
 
 app.get('/loginHome', authMiddleware, (req, res) => {
   res.render('auth/loginHome', {
     user: req.session.user
+  });
+});
+
+app.get('/gomypage', authMiddleware, (req, res) => {
+  res.render('mypage/mypage', {
+    name: req.session.user.name,
+    email: req.session.user.email,
+
+    vcBookmarks: [],
+    wordBookmarks: [],
+
+    level: 1,
+    daysToNextLevel: 7,
+
+    attendanceDates: [],
+    totalDays: 0,
+    continuousDays: 0,
   });
 });
