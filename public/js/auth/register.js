@@ -1,3 +1,5 @@
+document.addEventListener('DOMContentLoaded', () => {
+
 const pw1 = document.getElementById('password');
 const pw2 = document.getElementById('password2');
 const msg = document.getElementById('pw-error-msg');
@@ -19,12 +21,19 @@ function checkPasswordMatch() {
   }
 }
 
-document.getElementById('checkEmailBtn').addEventListener('click', async () => {
+//document.getElementById('checkEmailBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('checkEmailBtn');
+
+  console.log("버튼:", btn); // 디버깅용
+
+  btn.addEventListener('click', async () => {
+    console.log("버튼 클릭됨"); // 디버깅용
+
   const emailInput = document.getElementById('email').value;
   const response = await fetch(`/auth/check-email?email=${emailInput}`);
   const result = await response.json();
 
-  const btn = document.getElementById('checkEmailBtn');
+  //const btn = document.getElementById('checkEmailBtn');
   const statusText = document.getElementById('emailStatusText');
 
   if (result.exists) {
@@ -39,3 +48,4 @@ document.getElementById('checkEmailBtn').addEventListener('click', async () => {
 });
 
 console.log('register.js 로딩 완료!');
+});

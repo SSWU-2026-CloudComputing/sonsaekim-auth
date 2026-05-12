@@ -2,13 +2,32 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const session = require('express-session');
+const { sequelize } = require('./models');
+
+sequelize.authenticate()
+  .then(() => {
+    console.log('✅ MySQL 연결 성공');
+  
+    return sequelize.sync();
+  })
+  .then(() => {
+    console.log('✅ 테이블 생성 완료');
+  })
+  .catch((err) => {
+    console.error('❌ MySQL 연결 실패:', err);
+  });
+
+const PORT = 3001;
+app.listen(PORT, () => {
+  console.log(`✅ Auth Service running on port ${PORT}`);
+});
 
 //로그인 유지
 app.use(session({
   secret: 'secret-key',
   resave: false,
   saveUninitialized: false,
-  cookies: {
+  cookie: {
 	  httpOnly:true,
 	  secure:false,
 	  sameSite: 'lax',
@@ -44,15 +63,4 @@ app.get('/home', (req, res) => {
   }
 
   res.send(`로그인 성공! ${req.session.user.name}`);
-});
-
-// 서버 실행
-const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`✅ Auth Service running on port ${PORT}`);
-});
-
-//로그인 유지 확인(임시 라우트 추가)
-app.get('/home', (req, res) => {
-  res.send(`로그인 성공! ${req.session.user?.name}`);
 });

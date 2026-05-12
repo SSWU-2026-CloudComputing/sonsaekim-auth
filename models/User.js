@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
 
 
   // 테이블이랑 관계설정
-  User.associate = (models) => {
+  /*User.associate = (models) => {
     User.hasMany(models.GameRecord, {
       foreignKey: 'user_id',
       sourceKey: 'user_id'
@@ -47,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'userId',
       sourceKey: 'user_id'
     });
-  };
+  };*/
 
 
   return User;

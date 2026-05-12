@@ -1,7 +1,7 @@
 const redisClient = require('../configs/redis');
 const { generateRandomNumber, sendEmail } = require('../lib/email.helper');
 //const { User, Attendance } = require('../models');
-const User = require('../models/User');
+const { User } = require('../models');
 const bcrypt = require('bcrypt');
 
 exports.showVerifyPage = (req, res) => {
@@ -55,10 +55,25 @@ exports.registerTemp = async (req, res) => {
   }
 };
 
-exports.checkEmail = async (req, res) => {
+/*exports.checkEmail = async (req, res) => {
   const { email } = req.query;
   const user = await User.findOne({ where: { email } });
   res.json({ exists: !!user });
+};*/
+exports.checkEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    const user = await User.findOne({ where: { email } });
+
+    return res.json({
+      exists: !!user
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: '서버 오류' });
+  }
 };
 
 exports.verifyCode = async (req, res) => {
