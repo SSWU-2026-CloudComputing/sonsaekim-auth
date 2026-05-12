@@ -1,29 +1,40 @@
 const express = require('express');
 const app = express();
 const path = require('path');
+const PORT = 3001;
 const session = require('express-session');
+const { RedisStore } = require('connect-redis');
+const redisClient = require('./configs/redis');
 const { sequelize } = require('./models');
 
-sequelize.authenticate()
-  .then(() => {
-    console.log('✅ MySQL 연결 성공');
-  
-    return sequelize.sync();
-  })
-  .then(() => {
-    console.log('✅ 테이블 생성 완료');
-  })
-  .catch((err) => {
-    console.error('❌ MySQL 연결 실패:', err);
-  });
+const startServer = async () => {
+  try {
+    await redisClient.connect();
 
-const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`✅ Auth Service running on port ${PORT}`);
-});
+    await sequelize.authenticate();
+    console.log('✅ MySQL 연결 성공');
+
+    await sequelize.sync();
+    console.log('✅ 테이블 생성 완료');
+
+    app.listen(PORT, () => {
+      console.log(`✅ Auth Service running on port ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error('❌ 서버 실행 실패:', err);
+  }
+};
+
+startServer();
 
 //로그인 유지
 app.use(session({
+  store: new RedisStore({
+    client: redisClient,
+    prefix: "sess:",
+    ttl: 86400,
+  }),
   secret: 'secret-key',
   resave: false,
   saveUninitialized: false,
@@ -31,6 +42,7 @@ app.use(session({
 	  httpOnly:true,
 	  secure:false,
 	  sameSite: 'lax',
+	  maxAge: 1000 * 60 * 60 * 24,
   }
 }));
 
