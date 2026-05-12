@@ -119,3 +119,18 @@ app.get('/gomypage', authMiddleware, (req, res) => {
     continuousDays: 0,
   });
 });
+
+app.get('/logout', (req, res) => {
+  console.log('로그아웃 요청 들어옴'); //디버그 코드
+  req.session.destroy((err) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).send('로그아웃 실패');
+    }
+    console.log('세션 삭제 완료');
+    res.clearCookie('connect.sid');
+
+    return res.redirect('/home');
+  });
+});

@@ -16,3 +16,5 @@ exports.showchangePwPage = authService.showchangePwPage;
 exports.findPwProcess = authService.findPwProcess;
 exports.verifyFindPwCode = authService.verifyFindPwCode;
 exports.changePassword = authService.changePassword;
+
+exports.logout = authService.logout;

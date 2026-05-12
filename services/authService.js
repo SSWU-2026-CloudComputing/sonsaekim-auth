@@ -251,3 +251,18 @@ exports.changePassword = async (req, res) => {
     res.status(500).send('비밀번호 변경 중 오류 발생');
   }
 };
+
+exports.logout = async (req, res) => {
+
+  req.session.destroy((err) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).send('로그아웃 실패');
+    }
+
+    res.clearCookie('connect.sid');
+
+    return res.redirect('/home');
+  });
+};
