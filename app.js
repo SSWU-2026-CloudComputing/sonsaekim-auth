@@ -73,5 +73,13 @@ app.use('/auth', authRouter);
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/home', authMiddleware, (req, res) => {
-  res.send(`로그인 성공! ${req.session.user.name}`);
+  res.render('auth/home', {
+    user: req.session.user
+  });
+});
+
+app.get('/loginHome', authMiddleware, (req, res) => {
+  res.render('auth/loginHome', {
+    user: req.session.user
+  });
 });

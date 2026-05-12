@@ -155,7 +155,7 @@ exports.loginProcess = async (req, res) => {
 
         console.log("세션 저장 완료:", req.session);
 
-        return res.redirect('/home');
+        return res.redirect('/loginHome');
       });
 
     } else {
