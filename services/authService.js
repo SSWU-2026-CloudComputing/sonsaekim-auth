@@ -1,268 +1,66 @@
 const redisClient = require('../configs/redis');
 const { generateRandomNumber, sendEmail } = require('../lib/email.helper');
-//const { User, Attendance } = require('../models');
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
 
-exports.showVerifyPage = (req, res) => {
-  const { email } = req.query;
-  res.render('auth/verify', { email });
-};
-
-exports.showRegisterPage = (req, res) => {
-  res.render('auth/register', {
-    name: '',
-    email: '',
-    emailError: '',
-    passwordMatchError: '',
-    passwordMatched: false,
-  });
-};
-
-exports.registerTemp = async (req, res) => {
-  const { name, email, password, password2 } = req.body;
-
-  let emailError = '';
-  let passwordMatchError = '';
-  let passwordMatched = false;
-
+exports.registerTemp = async ({ name, email, password }) => {
   const existingUser = await User.findOne({ where: { email } });
-  if (existingUser) emailError = '이미 존재하는 이메일입니다.';
-  if (password !== password2) passwordMatchError = '비밀번호가 일치하지 않습니다.';
-  else passwordMatched = true;
-
-  if (emailError || passwordMatchError) {
-    return res.render('auth/register', {
-      name, email, emailError, passwordMatchError, passwordMatched,
-    });
-  }
+  if (existingUser) throw new Error('EMAIL_EXISTS');
 
   const authCode = generateRandomNumber();
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await redisClient.setEx(`${email}:authCode`, 300, authCode);
-    await redisClient.setEx(`${email}:tempUser`, 300, JSON.stringify({ name, password: hashedPassword }));
-    await sendEmail(email, authCode);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    res.redirect(`/auth/verify?email=${encodeURIComponent(email)}`);
-  } catch (err) {
-    console.error(err);
-    return res.render('auth/register', {
-      name, email,
-      emailError: '오류가 발생했습니다. 다시 시도해주세요.',
-      passwordMatchError, passwordMatched,
-    });
-  }
+  await redisClient.setEx(`${email}:authCode`, 300, authCode);
+  await redisClient.setEx(`${email}:tempUser`, 300, JSON.stringify({ name, password: hashedPassword }));
+  await sendEmail(email, authCode);
 };
 
-/*exports.checkEmail = async (req, res) => {
-  const { email } = req.query;
+exports.checkEmail = async (email) => {
   const user = await User.findOne({ where: { email } });
-  res.json({ exists: !!user });
-};*/
-exports.checkEmail = async (req, res) => {
-  try {
-    const { email } = req.query;
-
-    const user = await User.findOne({ where: { email } });
-
-    return res.json({
-      exists: !!user
-    });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: '서버 오류' });
-  }
+  return !!user;
 };
 
-exports.verifyCode = async (req, res) => {
-  const { email, code: userCode } = req.body;
+exports.verifyCode = async ({ email, code }) => {
+  const savedCode = await redisClient.get(`${email}:authCode`);
+  const tempUserStr = await redisClient.get(`${email}:tempUser`);
+  const tempUser = tempUserStr ? JSON.parse(tempUserStr) : null;
 
-  try {
-    const savedCode = await redisClient.get(`${email}:authCode`);
-    const tempUserStr = await redisClient.get(`${email}:tempUser`);
-    const tempUser = tempUserStr ? JSON.parse(tempUserStr) : null;
+  if (!savedCode || !tempUser) throw new Error('CODE_EXPIRED');
+  if (code !== savedCode) throw new Error('CODE_MISMATCH');
 
-    if (!savedCode || !tempUser) {
-      return res.render('auth/verify', {
-        email,
-        errorMessage: '인증 시간이 만료되었습니다. 다시 시도해주세요.',
-      });
-    }
-
-    if (userCode === savedCode) {
-      const { name, password } = tempUser;
-      await User.create({ email, name, password });
-      await redisClient.del(`${email}:authCode`);
-      await redisClient.del(`${email}:tempUser`);
-      return res.redirect('/auth/welcome');
-    } else {
-      return res.render('auth/verify', {
-        email, code: userCode,
-        errorMessage: '인증번호가 일치하지 않습니다.',
-      });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("서버 오류 발생");
-  }
+  const { name, password } = tempUser;
+  await User.create({ email, name, password });
+  await redisClient.del(`${email}:authCode`);
+  await redisClient.del(`${email}:tempUser`);
 };
 
-exports.showWelcomePage = (req, res) => {
-  res.render('auth/welcome');
+exports.login = async ({ email, password }) => {
+  const user = await User.findOne({ where: { email } });
+  if (!user) throw new Error('USER_NOT_FOUND');
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) throw new Error('WRONG_PASSWORD');
+
+  return { user_id: user.user_id, name: user.name, email: user.email };
 };
 
-exports.showLoginPage = (req, res) => {
-  res.render('auth/login', { email: '', error: null });
+exports.findPw = async (email) => {
+  const user = await User.findOne({ where: { email } });
+  if (!user) throw new Error('USER_NOT_FOUND');
+
+  const authCode = generateRandomNumber();
+  await redisClient.setEx(`${email}:resetCode`, 300, authCode);
+  await sendEmail(email, authCode);
 };
 
-exports.loginProcess = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return res.render('auth/login', { error: '유저 정보가 존재하지 않습니다.', email });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (isMatch) {
-      req.session.user = {
-        user_id: user.user_id,
-        name: user.name,
-        email: user.email,
-      };
-
-      /*const nowKST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-      const today = nowKST.toISOString().slice(0, 10); 
-
-      const alreadyExists = await Attendance.findOne({
-        where: { user_id: user.user_id, date: today }
-      });
-      if (!alreadyExists) {
-        await Attendance.create({ user_id: user.user_id, date: today });
-      }*/
-//디버깅 로그 추가
-     console.log("세션 저장 직전:", req.session);
-
-      req.session.save((err) => {
-        if (err) {
-          console.error("세션 저장 에러:", err);
-          return res.status(500).send("세션 저장 실패");
-        }
-
-        console.log("세션 저장 완료:", req.session);
-
-        return res.redirect('/loginHome');
-      });
-
-    } else {
-      return res.render('auth/login', { 
-	      email, error: '비밀번호가 올바르지 않습니다.' });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("서버 오류 발생");
-  }
+exports.verifyFindPwCode = async ({ email, code }) => {
+  const savedCode = await redisClient.get(`${email}:resetCode`);
+  if (!savedCode) throw new Error('CODE_EXPIRED');
+  if (code !== savedCode) throw new Error('CODE_MISMATCH');
+  await redisClient.del(`${email}:resetCode`);
 };
 
-exports.showfinPwPage = (req, res) => {
-  res.render('auth/findPw', { email: '', error: '' });
-};
-
-exports.showfinPwVerifyPage = (req, res) => {
-  const { email } = req.query;
-  res.render('auth/findPwVerify', { email });
-};
-
-exports.showchangePwPage = (req, res) => {
-  const { email } = req.query;
-  res.render('auth/changePw', { email });
-};
-
-exports.findPwProcess = async (req, res) => {
-  const { email } = req.body;
-
-  try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.render('auth/findPw', {
-        email,
-        error: '존재하지 않는 이메일입니다.',
-      });
-    }
-
-    const authCode = generateRandomNumber();
-    await redisClient.setEx(`${email}:resetCode`, 300, authCode);
-    await sendEmail(email, authCode);
-    res.redirect(`/auth/findPwVerify?email=${encodeURIComponent(email)}`);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('서버 오류 발생');
-  }
-};
-
-exports.verifyFindPwCode = async (req, res) => {
-  const { email, code: userCode } = req.body;
-
-  try {
-    const savedCode = await redisClient.get(`${email}:resetCode`);
-    if (!savedCode) {
-      return res.render('auth/findPwVerify', {
-        email,
-        errorMessage: '인증 시간이 만료되었습니다. 다시 시도해주세요.',
-      });
-    }
-
-    if (userCode === savedCode) {
-      await redisClient.del(`${email}:resetCode`);
-      return res.redirect(`/auth/changepw?email=${encodeURIComponent(email)}`);
-    } else {
-      return res.render('auth/findPwVerify', {
-        email,
-        code: userCode,
-        errorMessage: '인증번호가 일치하지 않습니다.',
-      });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("서버 오류 발생");
-  }
-};
-
-exports.changePassword = async (req, res) => {
-  const { newPassword, confirmPassword, email } = req.body;
-
-  if (newPassword !== confirmPassword) {
-    return res.render('auth/changePw', {
-      email,
-      errorMessage: '비밀번호가 일치하지 않습니다.',
-    });
-  }
-
-  try {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.update({ password: hashedPassword }, { where: { email } });
-    return res.redirect('/auth/login');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('비밀번호 변경 중 오류 발생');
-  }
-};
-
-exports.logout = async (req, res) => {
-
-  req.session.destroy((err) => {
-
-    if (err) {
-      console.error(err);
-      return res.status(500).send('로그아웃 실패');
-    }
-
-    res.clearCookie('connect.sid');
-
-    return res.redirect('/home');
-  });
+exports.changePassword = async ({ email, newPassword }) => {
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  await User.update({ password: hashedPassword }, { where: { email } });
 };

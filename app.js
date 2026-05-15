@@ -3,17 +3,67 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const path = require('path');
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const session = require('express-session');
 const { RedisStore } = require('connect-redis');
 const redisClient = require('./configs/redis');
 const { sequelize } = require('./models');
 const authMiddleware = require('./middlewares/authMiddleware');
 
+app.use(session({
+  store: new RedisStore({
+    client: redisClient,
+    prefix: 'sess:',
+    ttl: 86400,
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 1000 * 60 * 60 * 24,
+  },
+}));
+
+app.use((req, res, next) => {
+  res.locals.user = req.session ? req.session.user : null;
+  next();
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+const authRouter = require('./routes/auth');
+const mypageRouter = require('./routes/mypage');
+
+app.use('/auth', authRouter);
+app.use('/', mypageRouter);
+
+app.get('/home', (req, res) => {
+  res.render('auth/home');
+});
+
+app.get('/loginHome', authMiddleware, (req, res) => {
+  res.render('auth/loginHome', { user: req.session.user });
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) return res.status(500).send('로그아웃 실패');
+    res.clearCookie('connect.sid');
+    res.redirect('/home');
+  });
+});
+
 const startServer = async () => {
   try {
-    await redisClient.connect();
-
     await sequelize.authenticate();
     console.log('✅ MySQL 연결 성공');
 
@@ -23,114 +73,9 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`✅ Auth Service running on port ${PORT}`);
     });
-
   } catch (err) {
     console.error('❌ 서버 실행 실패:', err);
   }
 };
 
 startServer();
-
-//로그인 유지
-app.use(session({
-  store: new RedisStore({
-    client: redisClient,
-    prefix: "sess:",
-    ttl: 86400,
-  }),
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-	  httpOnly:true,
-	  secure:false,
-	  sameSite: 'lax',
-	  maxAge: 1000 * 60 * 60 * 24,
-  }
-}));
-
-//locals
-app.use((req, res, next) => {
-  res.locals.user = req.session ? req.session.user : null;
-  next();
-});
-
-//미들웨어
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// view 설정 (EJS)
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-//라우터 불러오기
-const authRouter = require('./routes/auth');
-//라우터 연결
-app.use('/auth', authRouter);
-
-// 정적 파일
-//app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'public')));
-
-/*app.get('/home', authMiddleware, (req, res) => {
-  res.render('auth/home', {
-    user: req.session.user
-  });
-});
-app.get('/home', authMiddleware, (req, res) => {
-  res.render('mypage/mypage', {
-    name: req.session.user.name,
-    email: req.session.user.email,
-
-    // (분리 전까지 필요함)임시 데이터
-    vcBookmarks: [],
-    wordBookmarks: [],
-    level: 1,
-    daysToNextLevel: 7,
-    attendanceDates: [],
-    totalDays: 0,
-    continuousDays: 0,
-  });
-});*/
-
-app.get('/home', (req, res) => {
-  res.render('auth/home');
-});
-
-app.get('/loginHome', authMiddleware, (req, res) => {
-  res.render('auth/loginHome', {
-    user: req.session.user
-  });
-});
-
-app.get('/gomypage', authMiddleware, (req, res) => {
-  res.render('mypage/mypage', {
-    name: req.session.user.name,
-    email: req.session.user.email,
-
-    vcBookmarks: [],
-    wordBookmarks: [],
-
-    level: 1,
-    daysToNextLevel: 7,
-
-    attendanceDates: [],
-    totalDays: 0,
-    continuousDays: 0,
-  });
-});
-
-app.get('/logout', (req, res) => {
-  console.log('로그아웃 요청 들어옴'); //디버그 코드
-  req.session.destroy((err) => {
-
-    if (err) {
-      console.error(err);
-      return res.status(500).send('로그아웃 실패');
-    }
-    console.log('세션 삭제 완료');
-    res.clearCookie('connect.sid');
-
-    return res.redirect('/home');
-  });
-});
