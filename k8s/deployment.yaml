@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonsaekim-auth
+  labels:
+    app: sonsaekim-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonsaekim-auth
+  template:
+    metadata:
+      labels:
+        app: sonsaekim-auth
+    spec:
+      containers:
+        - name: sonsaekim-auth
+          image: mminnn28/sswu_sonsaekim-auth:latest
+          ports:
+            - containerPort: 3001
+          env:
+            - name: PORT
+              value: "3001"
+            - name: NODE_ENV
+              value: "production"
+            - name: DB_HOST
+              value: "10.178.0.33" # MySQL vm 내부 ip
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
+            - name: DB_NAME
+              value: "sonsaekim_auth"
+            - name: REDIS_HOST
+              value: "redis-svc" # Redis K8s Service 이름
+            - name: REDIS_PORT
+              value: "6379"
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: DB_PASS
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: SESSION_SECRET
+            - name: NODEMAILER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: NODEMAILER_USER
+            - name: NODEMAILER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: NODEMAILER_PASS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonsaekim-auth-svc
+spec:
+  selector:
+    app: sonsaekim-auth
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3001
+  type: LoadBalancer
