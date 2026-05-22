@@ -1,29 +1,64 @@
 const { User } = require('../models');
 const { generateRandomNumber, sendEmail } = require('../lib/email.helper');
 
+const axios = require('axios');
+const PROGRESS_URL = process.env.PROGRESS_SERVICE_URL || 'http://progress-service:3002';
+
+
 exports.renderMypage = async (req, res) => {
     const userId = req.session.user?.user_id;
     if (!userId) return res.redirect('/nouser');
-
     try {
         const user = await User.findOne({ where: { user_id: userId } });
         if (!user) return res.redirect('/nouser');
 
+        let progressData = {
+            level: 1, totalDays: 0, daysToNextLevel: 7,
+            continuousDays: 0, attendanceDates: [],
+            vcBookmarks: [], wordBookmarks: [],
+        };
+        try {
+            const r = await axios.get(`${PROGRESS_URL}/progress/mypage`,
+                { headers: { 'x-user-id': userId } });
+            progressData = r.data;
+        } catch (e) {
+            console.error('Progress 호출 실패, 기본값 사용:', e.message);
+        }
+
         res.render('mypage/mypage', {
-            name: user.name,
-            email: user.email,
-            level: 1,
-            totalDays: 0,
-            daysToNextLevel: 7,
-            continuousDays: 0,
-            attendanceDates: [],
-            vcBookmarks: [],
-            wordBookmarks: [],
+            name:            user.name,
+            email:           user.email,
+            level:           progressData.level,
+            totalDays:       progressData.totalDays,
+            daysToNextLevel: progressData.daysToNextLevel,
+            continuousDays:  progressData.continuousDays,
+            attendanceDates: progressData.attendanceDates,
+            vcBookmarks:     progressData.vcBookmarks,
+            wordBookmarks:   progressData.wordBookmarks,
         });
     } catch (err) {
-        console.error("마이페이지 조회 오류:", err);
-        res.status(500).send("서버 오류 발생");
+        res.status(500).send('서버 오류');
     }
+};
+
+exports.renderVcDetail = async (req, res) => {
+    const userId = req.session.user?.user_id;
+    try {
+        const r = await axios.get(
+            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/vc/${req.params.id}`,
+            { headers: { 'x-user-id': userId } });
+        res.render('mypage/bookmarkDetail', { ...r.data, backUrl: '/mypage' });
+    } catch { res.status(500).send('서버 오류'); }
+};
+
+exports.renderWordDetail = async (req, res) => {
+    const userId = req.session.user?.user_id;
+    try {
+        const r = await axios.get(
+            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/word/${req.params.id}`,
+            { headers: { 'x-user-id': userId } });
+        res.render('mypage/bookmarkDetail', { ...r.data, backUrl: '/mypage' });
+    } catch { res.status(500).send('서버 오류'); }
 };
 
 exports.updateProfile = async (req, res) => {
@@ -130,6 +165,3 @@ exports.logout = (req, res) => {
         res.redirect('/');
     });
 };
-
-exports.renderVcDetail = (req, res) => res.status(503).send('준비 중입니다.');
-exports.renderWordDetail = (req, res) => res.status(503).send('준비 중입니다.');
