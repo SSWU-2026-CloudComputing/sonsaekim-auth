@@ -56,6 +56,14 @@ spec:
                 secretKeyRef:
                   name: auth-secret
                   key: NODEMAILER_PASS
+
+           - name: PROGRESS_SERVICE_URL #progress service url 추가
+             value: "http://sonsaekim-progress-svc:3002"      
+           - name: RABBITMQ_URL         #RABBITMQ_URL 추가
+             valueFrom:
+               secretKeyRef:
+                  name: auth-secret
+                  key: RABBITMQ_URL              
 ---
 apiVersion: v1
 kind: Service
