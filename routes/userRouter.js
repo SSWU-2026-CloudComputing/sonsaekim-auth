@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mypageController = require('../controllers/mypageController');
+const { User } = require('../models');
+
 
 router.get('/mypage', mypageController.renderMypage);
 router.get('/gomypage', mypageController.goMypage);
