@@ -9,6 +9,7 @@ const { RedisStore } = require('connect-redis');
 const redisClient = require('./configs/redis');
 const { sequelize } = require('./models');
 const authMiddleware = require('./middlewares/authMiddleware');
+const { connectRabbitMQ } = require('./src/events/publisher');
 
 app.use(session({
   name: 'connect.sid',
@@ -70,6 +71,13 @@ const startServer = async () => {
 
     await sequelize.sync();
     console.log('테이블 생성 완료');
+
+    // RabbitMQ 연결 추가
+    try {
+        await connectRabbitMQ();
+    } catch (err) {
+        console.warn('RabbitMQ 연결 실패 — 서버는 계속 실행:', err.message);
+    }
 
     app.listen(PORT, () => {
       console.log(`Auth Service running on port ${PORT}`);
