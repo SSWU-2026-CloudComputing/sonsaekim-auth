@@ -18,8 +18,8 @@ exports.renderMypage = async (req, res) => {
             vcBookmarks: [], wordBookmarks: [],
         };
         try {
-            const r = await axios.get(`${PROGRESS_URL}/progress/mypage`,
-                { headers: { 'x-user-id': userId } });
+            const r = await axios.get(`${PROGRESS_URL}/progress/mypage`, {
+                params: { userId }});
             progressData = r.data;
         } catch (e) {
             console.error('Progress 호출 실패, 기본값 사용:', e.message);
@@ -43,22 +43,56 @@ exports.renderMypage = async (req, res) => {
 
 exports.renderVcDetail = async (req, res) => {
     const userId = req.session.user?.user_id;
+    const vcId = req.params.id;
+
+    if (!userId) return res.redirect('/nouser');
+
     try {
         const r = await axios.get(
-            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/vc/${req.params.id}`,
-            { headers: { 'x-user-id': userId } });
-        res.render('mypage/bookmarkDetail', { ...r.data, backUrl: '/mypage' });
-    } catch { res.status(500).send('서버 오류'); }
+            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/vc/${vcId}`,
+            {
+                params: { userId }
+            }
+        );
+
+        res.render('mypage/bookmarkDetail', {
+            ...r.data,
+            backUrl: '/mypage',
+            sourceId: vcId,
+            sourceType: 'sign_vc',
+            isBookmarked: true
+        });
+    } catch (err) {
+        console.error('자음/모음 상세 조회 실패:', err.message);
+        res.status(500).send('서버 오류');
+    }
 };
 
 exports.renderWordDetail = async (req, res) => {
     const userId = req.session.user?.user_id;
+    const wordId = req.params.id;
+
+    if (!userId) return res.redirect('/nouser');
+
     try {
         const r = await axios.get(
-            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/word/${req.params.id}`,
-            { headers: { 'x-user-id': userId } });
-        res.render('mypage/bookmarkDetail', { ...r.data, backUrl: '/mypage' });
-    } catch { res.status(500).send('서버 오류'); }
+            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/word/${wordId}`,
+            {
+                params: { userId }
+            }
+        );
+
+        res.render('mypage/bookmarkDetail', {
+            ...r.data,
+            backUrl: '/mypage',
+            sourceId: wordId,
+            sourceType: 'sign_word',
+            isBookmarked: true
+        });
+    } catch (err) {
+        console.error('단어 상세 조회 실패:', err.message);
+        res.status(500).send('서버 오류');
+    }
 };
 
 exports.updateProfile = async (req, res) => {
