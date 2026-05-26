@@ -18,8 +18,8 @@ exports.renderMypage = async (req, res) => {
             vcBookmarks: [], wordBookmarks: [],
         };
         try {
-            const r = await axios.get(`${PROGRESS_URL}/progress/mypage`,
-                { headers: { 'x-user-id': userId } });
+            const r = await axios.get(`${PROGRESS_URL}/progress/mypage`, {
+                params: { userId }});
             progressData = r.data;
         } catch (e) {
             console.error('Progress 호출 실패, 기본값 사용:', e.message);
@@ -44,9 +44,8 @@ exports.renderMypage = async (req, res) => {
 exports.renderVcDetail = async (req, res) => {
     const userId = req.session.user?.user_id;
     try {
-        const r = await axios.get(
-            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/vc/${req.params.id}`,
-            { headers: { 'x-user-id': userId } });
+        const r = await axios.get(`${PROGRESS_URL}/progress/mypage`, {
+            params: { userId }});
         res.render('mypage/bookmarkDetail', { ...r.data, backUrl: '/mypage' });
     } catch { res.status(500).send('서버 오류'); }
 };
@@ -54,9 +53,8 @@ exports.renderVcDetail = async (req, res) => {
 exports.renderWordDetail = async (req, res) => {
     const userId = req.session.user?.user_id;
     try {
-        const r = await axios.get(
-            `${PROGRESS_URL}/progress/mypage/bookmarkDetail/word/${req.params.id}`,
-            { headers: { 'x-user-id': userId } });
+        const r = await axios.get(`${PROGRESS_URL}/progress/mypage`, {
+            params: { userId }});
         res.render('mypage/bookmarkDetail', { ...r.data, backUrl: '/mypage' });
     } catch { res.status(500).send('서버 오류'); }
 };
