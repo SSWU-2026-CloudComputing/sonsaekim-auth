@@ -48,6 +48,8 @@ const mypageRouter = require('./routes/mypage');
 app.use('/auth', authRouter);
 app.use('/', mypageRouter);
 
+app.get('/healthz', (req, res) => res.sendStatus(200));
+
 app.get('/home', (req, res) => {
   res.render('auth/home');
 });
