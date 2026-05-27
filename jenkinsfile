@@ -45,7 +45,7 @@ pipeline {
                 }
             }
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                sh "docker build -t ${IMAGE_NAME}:v${BUILD_NUMBER} ."
             }
         }
 
@@ -57,7 +57,7 @@ pipeline {
                 }
             }
             steps {
-                sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                sh "docker push ${IMAGE_NAME}:v${BUILD_NUMBER}"
             }
         }
 
@@ -70,7 +70,7 @@ pipeline {
             }
             steps {
                 sh """
-                    sed -i "s#sswu_sonsaekim-auth:.*#sswu_sonsaekim-auth:${BUILD_NUMBER}#g" k8s/deployment.yaml
+                    sed -i "s#sswu_sonsaekim-auth:.*#sswu_sonsaekim-auth:v${BUILD_NUMBER}#g" k8s/deployment.yaml
                 """
             }
         }
