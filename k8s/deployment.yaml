@@ -29,6 +29,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: auth-service
+  annotations:
+    cloud.google.com/backend-config: '{"default": "auth-backend-config"}'
 spec:
   selector:
     app: sonsaekim-auth
