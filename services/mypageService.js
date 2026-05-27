@@ -2,7 +2,7 @@ const { User } = require('../models');
 const { generateRandomNumber, sendEmail } = require('../lib/email.helper');
 
 const axios = require('axios');
-const PROGRESS_URL = process.env.PROGRESS_SERVICE_URL || 'http://sonsaekim-progress-svc:3002';
+const PROGRESS_URL = process.env.PROGRESS_SERVICE_URL || 'http://progress-service:3002';
 
 
 exports.renderMypage = async (req, res) => {

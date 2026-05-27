@@ -40,7 +40,8 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use('/auth', express.static(path.join(__dirname, 'public/auth')));
+app.use('/', express.static(path.join(__dirname, 'public')));
 
 const authRouter = require('./routes/auth');
 const mypageRouter = require('./routes/mypage');
