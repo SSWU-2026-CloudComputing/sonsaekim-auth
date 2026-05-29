@@ -51,8 +51,16 @@ app.use('/', mypageRouter);
 
 app.get('/healthz', (req, res) => res.sendStatus(200));
 
+app.get('/', (req, res) => {
+  res.redirect('/home');
+});
+
 app.get('/home', (req, res) => {
-  res.render('auth/home');
+  if (req.session.user) {
+    res.render('auth/loginHome', { user: req.session.user });
+  } else {
+    res.render('auth/home');
+  }
 });
 
 app.get('/loginHome', authMiddleware, (req, res) => {
