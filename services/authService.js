@@ -30,7 +30,7 @@ exports.verifyCode = async ({ email, code }) => {
   if (code !== savedCode) throw new Error('CODE_MISMATCH');
 
   const { name, password } = tempUser;
-  await User.create({ email, name, password });
+  const user = await User.create({ email, name, password });
 
   // UserSignedUp 이벤트 발행 추가
   try {
