@@ -11,6 +11,7 @@ const { sequelize } = require('./models');
 const authMiddleware = require('./middlewares/authMiddleware');
 const { connectRabbitMQ } = require('./src/events/publisher');
 
+
 app.use(session({
   name: 'connect.sid',
   store: new RedisStore({
