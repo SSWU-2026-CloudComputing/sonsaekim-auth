@@ -2,7 +2,7 @@ const redisClient = require('../configs/redis');
 const { generateRandomNumber, sendEmail } = require('../lib/email.helper');
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
-const { publish } = require('../src/events/publisher');  // 추가
+const axios = require('axios');
 
 exports.registerTemp = async ({ name, email, password }) => {
   const existingUser = await User.findOne({ where: { email } });
@@ -32,12 +32,10 @@ exports.verifyCode = async ({ email, code }) => {
   const { name, password } = tempUser;
   const user = await User.create({ email, name, password });
 
-  // UserSignedUp 이벤트 발행 추가
   try {
-      await publish('user.signed-up', { userId: user.user_id });
+      await axios.post(`${process.env.PROGRESS_SERVICE_URL}/progress/user-init`, { userId: user.user_id });
   } catch (err) {
-      console.error('UserSignedUp 이벤트 발행 실패:', err.message);
-      // 이벤트 실패해도 회원가입은 성공으로 처리
+      console.error('Progress 초기화 요청 실패:', err.message);
   }
 
   await redisClient.del(`${email}:authCode`);
