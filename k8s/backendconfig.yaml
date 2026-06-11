@@ -9,3 +9,4 @@ spec:
     port: 3001
     type: HTTP
     requestPath: /healthz
+
